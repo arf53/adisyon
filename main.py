@@ -208,8 +208,25 @@ def kategory_oluştur(kategori: CategoryCreate, db: Session = Depends(get_db)):
 def kategorileri_getir(db:Session = Depends(get_db)):
     return db.query(Category).all()
 
+@app.get("/")
+async def ana_sayfa():
+    return FileResponse('garson.html')
 
+app.get("/garson")
+async def get_garson():
+    return FileResponse('garson.html')
 
+@app("/kasa")
+async def get_kasa():
+    return FileResponse('kasa.html')
+
+@app("/mutfak")
+async def get_mutfak():
+    return FileResponse('mutfak.html')
+
+@app("/admin")
+async def get_admin():
+    return FileResponse('admin.html')
 
 
 
@@ -260,4 +277,5 @@ def kategorileri_getir(db:Session = Depends(get_db)):
 
 # @app.get("/admin")
 # async def get_admin():
+
 #     return FileResponse('static/admin.html')
