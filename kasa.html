@@ -25,7 +25,7 @@
     };
 
     async function adisyonlariGetir() {
-        const response = await fetch('http://127.0.0.1:8000/cashier/orders');
+        const response = await fetch('/cashier/orders');
         const siparisler = await response.json();
         
         const alan = document.getElementById("kasaListesi");
@@ -93,7 +93,7 @@
     // HESABI KAPATMA (ÖDENDİ İŞARETLEME)
     async function hesabiKapat(siparisID) {
         if(confirm("Ödeme alındı ve masa kapatılıyor. Onaylıyor musunuz?")) {
-            await fetch(`http://127.0.0.1:8000/orders/${siparisID}/status`, {
+            await fetch(`/orders/${siparisID}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: "Ödendi" })
@@ -104,4 +104,5 @@
 </script>
 
 </body>
+
 </html>
