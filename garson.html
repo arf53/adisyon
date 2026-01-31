@@ -76,7 +76,7 @@
 
     // 1. ÜRÜNLERİ BACKEND'DEN ÇEK
     async function urunleriGetir() {
-        const response = await fetch('http://127.0.0.1:8000/products');
+        const response = await fetch('/products');
         urunlerDB = await response.json();
         
         const alan = document.getElementById("urunListesi");
@@ -180,7 +180,7 @@
         };
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/orders', {
+            const response = await fetch('/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(veri)
@@ -200,4 +200,5 @@
 </script>
 
 </body>
+
 </html>
