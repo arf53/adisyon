@@ -75,7 +75,7 @@
     // Eğer kendi bilgisayarında çalışıyorsan: "http://127.0.0.1:8000"
     // Eğer PythonAnywhere'de çalışıyorsan: "https://ahmt58.pythonanywhere.com"
     // Şimdilik Localhost ayarlı bırakıyorum:
-    const BASE_URL = "http://127.0.0.1:8000"; 
+    const BASE_URL = "http://127.0.0.1:800"; 
 
     window.onload = function() {
         sayfayiYenile();
@@ -90,7 +90,7 @@
     async function kategorileriGetir() {
         try {
             // Fetch adresinin başına BASE_URL ekledik
-            const response = await fetch(`${BASE_URL}/categories`);
+            const response = await fetch(`/categories`);
             
             if (!response.ok) {
                 throw new Error("Sunucuya ulaşılamadı (CORS veya Sunucu Kapalı)");
@@ -118,7 +118,7 @@
         if(!ad) { alert("Lütfen isim girin!"); return; }
 
         try {
-            const response = await fetch(`${BASE_URL}/categories`, {
+            const response = await fetch(`/categories`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: ad })
@@ -139,7 +139,7 @@
     // --- 2. ÜRÜN İŞLEMLERİ ---
     async function menuyuGetir() {
         try {
-            const response = await fetch(`${BASE_URL}/products`);
+            const response = await fetch(`/products`);
             const urunler = await response.json();
             const tablo = document.getElementById("urunListesi");
             tablo.innerHTML = ""; 
@@ -176,7 +176,7 @@
         };
 
         try {
-            const response = await fetch(`${BASE_URL}/products`, {
+            const response = await fetch(`/products`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(veri)
@@ -197,4 +197,5 @@
 </script>
 
 </body>
+
 </html>
