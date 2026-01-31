@@ -100,7 +100,7 @@
     async function hazirla(siparisID) {
         const onays = confirm("Bu siparişi tamamladınız mı?");
         if (onays) {
-            await fetch(`/${siparisID}/status`, {
+            await fetch(`/orders/${siparisID}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: "Hazır" })
@@ -114,3 +114,4 @@
 </body>
 
 </html>
+
