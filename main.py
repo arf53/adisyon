@@ -9,8 +9,9 @@ from adisyon_veri_tabani import Product,SessionLocal,Order,OrderItem,User,Catego
 from fastapi.staticfiles import StaticFiles 
 from fastapi.responses import FileResponse
 
+import os.path.dirname(os.path.abspath(__file__)
 app = FastAPI()
-
+Base_Dır = os.
 #dependency_injection
 def get_db():
 
@@ -210,23 +211,23 @@ def kategorileri_getir(db:Session = Depends(get_db)):
 
 @app.get("/")
 async def ana_sayfa():
-    return FileResponse('garson.html')
+    return FileResponse(os.path.join(Base_Dır,'garson.html'))
 
 app.get("/garson")
 async def get_garson():
-    return FileResponse('garson.html')
+    return FileResponse(os.path.join(Base_Dır,'garson.html'))
 
 @app("/kasa")
 async def get_kasa():
-    return FileResponse('kasa.html')
+    return FileResponse(os.path.join(Base_Dır,'kasa.html'))
 
 @app("/mutfak")
 async def get_mutfak():
-    return FileResponse('mutfak.html')
+    return FileResponse(os.path.join(Base_Dır,'mutfak.html'))
 
 @app("/admin")
 async def get_admin():
-    return FileResponse('admin.html')
+    return FileResponse(os.path.join(Base_Dır,'admin.html'))
 
 
 
@@ -279,3 +280,4 @@ async def get_admin():
 # async def get_admin():
 
 #     return FileResponse('static/admin.html')
+
