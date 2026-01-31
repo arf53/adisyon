@@ -1,9 +1,19 @@
 from sqlalchemy import create_engine,Column,Integer,String,Boolean,ForeignKey,Float
 from sqlalchemy.orm import declarative_base,sessionmaker, relationship
+import os
 
 #veritabanı_motoru
-DataBase_url = "sqlite:///adisyon_sistemi.db"
-engine = create_engine(DataBase_url, connect_args={"check_same_thread": False})
+DataBase_url = os.environ.get("DataBase_url")
+if DataBase_url and DataBase_url .startswith("postgres://"):
+    DataBase_url = DataBase_url.replaca("postgres://", "postgresgl://",1)
+
+if not DataBase_url:
+    DataBase_url = "sqlite:///adisyon_sistemi.db"
+    connect_args = {"check_same_thread" : False}
+else:
+    connect_args ={}
+
+engine = create_engine(DataBase_url, connect_args = connect_args)
 
 # DataBase_url = 'postgresql://neondb_owner:npg_IQxY2dJNn3Lr@ep-shy-frog-ahdb686n-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 # engine = create_engine(DataBase_url)
@@ -79,4 +89,7 @@ if __name__ == "__main__":
     print("veritabani oluşturuluyor...")
     Base.metadata.create_all(bind=engine)
     print("Başarili!'adisyon_sistemi.db' oluşturuldu." )
+
+
+
 
