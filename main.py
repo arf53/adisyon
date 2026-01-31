@@ -9,12 +9,12 @@ from adisyon_veri_tabani import Product,SessionLocal,Order,OrderItem,User,Catego
 from fastapi.staticfiles import StaticFiles 
 from fastapi.responses import FileResponse
 
-import os.path.dirname(os.path.abspath(__file__)
+import os
 
 Base.metadata.create_all(bind=engine)
                        
 app = FastAPI()
-Base_Dır = os.os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 #dependency_injection
 def get_db():
@@ -215,23 +215,23 @@ def kategorileri_getir(db:Session = Depends(get_db)):
 
 @app.get("/")
 async def ana_sayfa():
-    return FileResponse(os.path.join(Base_Dır,'garson.html'))
+    return FileResponse(os.path.join(BASE_DIR,'garson.html'))
 
-app.get("/garson")
+@app.get("/garson")
 async def get_garson():
-    return FileResponse(os.path.join(Base_Dır,'garson.html'))
+    return FileResponse(os.path.join(BASE_DIR,'garson.html'))
 
-@app("/kasa")
+@app.get("/kasa")
 async def get_kasa():
-    return FileResponse(os.path.join(Base_Dır,'kasa.html'))
+    return FileResponse(os.path.join(BASE_DIR,'kasa.html'))
 
-@app("/mutfak")
+@app.get("/mutfak")
 async def get_mutfak():
-    return FileResponse(os.path.join(Base_Dır,'mutfak.html'))
+    return FileResponse(os.path.join(BASE_DIR,'mutfak.html'))
 
-@app("/admin")
+@app.get("/admin")
 async def get_admin():
-    return FileResponse(os.path.join(Base_Dır,'admin.html'))
+    return FileResponse(os.path.join(BASE_DIR,'admin.html'))
 
 
 
@@ -284,5 +284,6 @@ async def get_admin():
 # async def get_admin():
 
 #     return FileResponse('static/admin.html')
+
 
 
