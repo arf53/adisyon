@@ -37,7 +37,7 @@
     // 1. SİPARİŞLERİ ÇEKME FONKSİYONU
     async function siparisleriGetir() {
         try {
-            const response = await fetch('http://127.0.0.1:8000/kitchen/orders');
+            const response = await fetch('/kitchen/orders');
             const siparisler = await response.json();
             
             const kutu = document.getElementById("siparisKutusu");
@@ -100,7 +100,7 @@
     async function hazirla(siparisID) {
         const onays = confirm("Bu siparişi tamamladınız mı?");
         if (onays) {
-            await fetch(`http://127.0.0.1:8000/orders/${siparisID}/status`, {
+            await fetch(`/${siparisID}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: "Hazır" })
@@ -112,4 +112,5 @@
 </script>
 
 </body>
+
 </html>
