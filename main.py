@@ -4,14 +4,18 @@ from pydantic import BaseModel
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 
-from adisyon_veri_tabani import Product,SessionLocal,Order,OrderItem,User,Category
+from adisyon_veri_tabani import Product,SessionLocal,Order,OrderItem,User,Category,Base,engine
 
 from fastapi.staticfiles import StaticFiles 
 from fastapi.responses import FileResponse
 
 import os.path.dirname(os.path.abspath(__file__)
+
+Base.metadata.create_all(bind=engine)
+                       
 app = FastAPI()
-Base_Dır = os.
+Base_Dır = os.os.path.dirname(os.path.abspath(__file__))
+
 #dependency_injection
 def get_db():
 
@@ -280,4 +284,5 @@ async def get_admin():
 # async def get_admin():
 
 #     return FileResponse('static/admin.html')
+
 
