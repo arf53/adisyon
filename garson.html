@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Garson Sipariş Ekranı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .urun-kutusu {
+            cursor: pointer;
+            transition: transform 0.1s;
+            height: 100px; /* Buton yüksekliği */
+        }
+        .urun-kutusu:active {
+            transform: scale(0.95); /* Tıklama efekti */
+        }
+        .sepet-alani {
+            height: 80vh;
+            border-left: 2px solid #ddd;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        
+        <div class="col-md-8 p-4">
+            <h3 class="mb-4">🍽️ Menü</h3>
+            
+            <div class="mb-3 d-flex gap-3 align-items-center">
+                <label><h5>Masa No:</h5></label>
+                <select id="masaNo" class="form-select w-25">
+                    <option value="1">Masa 1</option>
+                    <option value="2">Masa 2</option>
+                    <option value="3">Masa 3</option>
+                    <option value="4">Masa 4</option>
+                    <option value="5">Masa 5</option>
+                </select>
+            </div>
+
+            <div class="row" id="urunListesi">
+                </div>
+        </div>
+
+        <div class="col-md-4 sepet-alani p-4 d-flex flex-column">
+            <h3 class="text-center border-bottom pb-2">📝 Adisyon</h3>
+            
+            <div id="sepetListesi" class="flex-grow-1 overflow-auto mt-3">
+                <p class="text-center text-muted">Sepet boş...</p>
+            </div>
+
+            <div class="mt-3 border-top pt-3">
+                <div class="d-flex justify-content-between mb-3">
+                    <h4>Toplam:</h4>
+                    <h4 id="toplamFiyat">0.00 TL</h4>
+                </div>
+                <button onclick="siparisiGonder()" class="btn btn-success w-100 btn-lg">
+                    🚀 SİPARİŞİ MUTFAĞA GÖNDER
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Global Sepet Değişkeni
+    let sepet = [];
+    let urunlerDB = [];
+
+    // Sayfa açılınca menüyü çek
+    window.onload = function() {
+        urunleriGetir();
+    };
+
+    // 1. ÜRÜNLERİ BACKEND'DEN ÇEK
+    async function urunleriGetir() {
+        const response = await fetch('http://127.0.0.1:8000/products');
+        urunlerDB = await response.json();
+        
+        const alan = document.getElementById("urunListesi");
+        alan.innerHTML = "";
+
+        urunlerDB.forEach(urun => {
+            // Her ürün için bir kutu (kart) oluştur
+            alan.innerHTML += `
+                <div class="col-md-4 mb-3">
+                    <div class="card urun-kutusu shadow-sm text-center bg-white" 
+                         onclick="sepeteEkle(${urun.id})">
+                        <div class="card-body d-flex flex-column justify-content-center">
+                            <h5 class="card-title">${urun.name}</h5>
+                            <p class="card-text text-primary fw-bold">${urun.price} TL</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // 2. SEPET İŞLEMLERİ
+    function sepeteEkle(urunID) {
+        // Tıklanan ürünü veritabanı listesinden bul
+        const urun = urunlerDB.find(u => u.id === urunID);
+        
+        // Sepette zaten var mı?
+        const varMi = sepet.find(item => item.product_id === urunID);
+
+        if (varMi) {
+            varMi.quantity += 1; // Varsa adeti artır
+        } else {
+            // Yoksa yeni ekle
+            sepet.push({
+                product_id: urun.id,
+                name: urun.name,
+                price: urun.price,
+                quantity: 1,
+                note: ""
+            });
+        }
+        sepetiGuncelle();
+    }
+
+    function sepetiGuncelle() {
+        const liste = document.getElementById("sepetListesi");
+        const toplamEl = document.getElementById("toplamFiyat");
+        
+        liste.innerHTML = "";
+        let toplam = 0;
+
+        if (sepet.length === 0) {
+            liste.innerHTML = '<p class="text-center text-muted">Sepet boş...</p>';
+            toplamEl.innerText = "0.00 TL";
+            return;
+        }
+
+        sepet.forEach((item, index) => {
+            toplam += item.price * item.quantity;
+            liste.innerHTML += `
+                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                    <div>
+                        <strong>${item.name}</strong>
+                        <br>
+                        <small>${item.quantity} x ${item.price} TL</small>
+                    </div>
+                    <div>
+                        <span class="fw-bold">${item.price * item.quantity} TL</span>
+                        <button onclick="sepettenSil(${index})" class="btn btn-sm btn-outline-danger ms-2">X</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        toplamEl.innerText = toplam.toFixed(2) + " TL";
+    }
+
+    function sepettenSil(index) {
+        sepet.splice(index, 1);
+        sepetiGuncelle();
+    }
+
+    // 3. SİPARİŞİ API'YE GÖNDER (POST)
+    async function siparisiGonder() {
+        if (sepet.length === 0) {
+            alert("Sepet boş!");
+            return;
+        }
+
+        const masaNo = document.getElementById("masaNo").value;
+        
+        // Backend'in beklediği formatı hazırlıyoruz
+        const veri = {
+            table_no: parseInt(masaNo),
+            waiter_id: 1, // Şimdilik sabit garson
+            items: sepet.map(item => ({
+                product_id: item.product_id,
+                quantity: item.quantity,
+                note: item.note
+            }))
+        };
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(veri)
+            });
+
+            if (response.ok) {
+                alert("Sipariş Mutfağa İletildi! 👨‍🍳");
+                sepet = []; // Sepeti boşalt
+                sepetiGuncelle();
+            } else {
+                alert("Hata oluştu!");
+            }
+        } catch (hata) {
+            console.error("Hata:", hata);
+        }
+    }
+</script>
+
+</body>
+</html>

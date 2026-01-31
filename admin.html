@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Paneli - Restoran Yönetimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4 text-primary">Restoran Yönetim Paneli</h2>
+    
+    <div class="row">
+        <div class="col-md-4">
+            
+            <div class="card shadow mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="m-0">➕ Yeni Kategori Oluştur</h6>
+                </div>
+                <div class="card-body">
+                    <label>Kategori Adı:</label>
+                    <input type="text" id="kategoriAdi" class="form-control mb-2" placeholder="Örn: Çorbalar">
+                    <button onclick="kategoriEkle()" class="btn btn-warning w-100">Kategori Ekle</button>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0">🍔 Yeni Ürün Ekle</h6>
+                </div>
+                <div class="card-body">
+                    <label>Ürün Adı:</label>
+                    <input type="text" id="urunAdi" class="form-control mb-2" placeholder="Örn: Mercimek Çorbası">
+                    
+                    <label>Fiyat (TL):</label>
+                    <input type="number" id="urunFiyat" class="form-control mb-2" placeholder="0.00">
+                    
+                    <label>Kategori Seç:</label>
+                    <select id="urunKategori" class="form-select mb-3">
+                        <option selected disabled>Yükleniyor...</option>
+                    </select>
+
+                    <button onclick="urunEkle()" class="btn btn-success w-100">Ürünü Kaydet</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="m-0">📋 Mevcut Menü</h5>
+                    <button onclick="sayfayiYenile()" class="btn btn-sm btn-outline-light">Tabloyu Yenile</button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ürün Adı</th>
+                                <th>Fiyat</th>
+                                <th>Kategori ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="urunListesi">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- ÖNEMLİ AYAR: SUNUCU ADRESİ ---
+    // Eğer kendi bilgisayarında çalışıyorsan: "http://127.0.0.1:8000"
+    // Eğer PythonAnywhere'de çalışıyorsan: "https://ahmt58.pythonanywhere.com"
+    // Şimdilik Localhost ayarlı bırakıyorum:
+    const BASE_URL = "http://127.0.0.1:8000"; 
+
+    window.onload = function() {
+        sayfayiYenile();
+    };
+
+    function sayfayiYenile() {
+        kategorileriGetir();
+        menuyuGetir();
+    }
+
+    // --- 1. KATEGORİ İŞLEMLERİ ---
+    async function kategorileriGetir() {
+        try {
+            // Fetch adresinin başına BASE_URL ekledik
+            const response = await fetch(`${BASE_URL}/categories`);
+            
+            if (!response.ok) {
+                throw new Error("Sunucuya ulaşılamadı (CORS veya Sunucu Kapalı)");
+            }
+
+            const kategoriler = await response.json();
+            const selectKutu = document.getElementById("urunKategori");
+            selectKutu.innerHTML = ""; 
+
+            if(kategoriler.length === 0) {
+                selectKutu.innerHTML = "<option disabled selected>Önce Kategori Ekleyin!</option>";
+            } else {
+                kategoriler.forEach(kat => {
+                    selectKutu.innerHTML += `<option value="${kat.id}">${kat.name}</option>`;
+                });
+            }
+        } catch (error) {
+            console.error("Hata:", error);
+            // Hata mesajını ekrana basmıyoruz ki sürekli popup çıkmasın
+        }
+    }
+
+    async function kategoriEkle() {
+        const ad = document.getElementById("kategoriAdi").value;
+        if(!ad) { alert("Lütfen isim girin!"); return; }
+
+        try {
+            const response = await fetch(`${BASE_URL}/categories`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: ad })
+            });
+
+            if (response.ok) {
+                alert("✅ Kategori eklendi!");
+                document.getElementById("kategoriAdi").value = "";
+                sayfayiYenile(); 
+            } else {
+                alert("Hata oluştu! Kategori eklenemedi.");
+            }
+        } catch (error) {
+            alert("Sunucu hatası: " + error.message);
+        }
+    }
+
+    // --- 2. ÜRÜN İŞLEMLERİ ---
+    async function menuyuGetir() {
+        try {
+            const response = await fetch(`${BASE_URL}/products`);
+            const urunler = await response.json();
+            const tablo = document.getElementById("urunListesi");
+            tablo.innerHTML = ""; 
+
+            urunler.forEach(urun => {
+                tablo.innerHTML += `
+                    <tr>
+                        <td><span class="badge bg-secondary">${urun.id}</span></td>
+                        <td><b>${urun.name}</b></td>
+                        <td>${urun.price} ₺</td>
+                        <td>${urun.category_id}</td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            console.error("Hata:", error);
+        }
+    }
+
+    async function urunEkle() {
+        const ad = document.getElementById("urunAdi").value;
+        const fiyat = document.getElementById("urunFiyat").value;
+        const katId = document.getElementById("urunKategori").value;
+
+        if(!ad || !fiyat || !katId) {
+            alert("Lütfen tüm alanları doldurun ve bir kategori seçin!");
+            return;
+        }
+
+        const veri = {
+            name: ad,
+            price: parseFloat(fiyat),
+            category_id: parseInt(katId)
+        };
+
+        try {
+            const response = await fetch(`${BASE_URL}/products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(veri)
+            });
+
+            if (response.ok) {
+                alert("✅ Ürün başarıyla eklendi!");
+                sayfayiYenile();
+                document.getElementById("urunAdi").value = "";
+                document.getElementById("urunFiyat").value = "";
+            } else {
+                alert("Hata oluştu! Kategori ID'si geçersiz olabilir.");
+            }
+        } catch (error) {
+            alert("Bağlantı hatası: " + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>

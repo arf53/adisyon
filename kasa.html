@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kasa & Ödeme Ekranı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4 text-success">💸 KASA İŞLEMLERİ</h2>
+    
+    <div class="row" id="kasaListesi">
+        <div class="text-center mt-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p>Adisyonlar yükleniyor...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        adisyonlariGetir();
+        setInterval(adisyonlariGetir, 5000); // 5 saniyede bir yenile
+    };
+
+    async function adisyonlariGetir() {
+        const response = await fetch('http://127.0.0.1:8000/cashier/orders');
+        const siparisler = await response.json();
+        
+        const alan = document.getElementById("kasaListesi");
+        alan.innerHTML = "";
+
+        if (siparisler.length === 0) {
+            alan.innerHTML = '<div class="alert alert-secondary text-center w-100">Açık adisyon bulunmuyor.</div>';
+            return;
+        }
+
+        siparisler.forEach(siparis => {
+            // 1. TOPLAM TUTARI HESAPLA
+            let toplamTutar = 0;
+            let detayHTML = "";
+            
+            siparis.items.forEach(kalem => {
+                let kalemTutar = kalem.quantity * kalem.product.price; // Adet * Fiyat
+                toplamTutar += kalemTutar;
+                
+                detayHTML += `
+                    <li class="d-flex justify-content-between border-bottom py-1">
+                        <span>${kalem.quantity}x ${kalem.product.name}</span>
+                        <span>${kalemTutar} TL</span>
+                    </li>
+                `;
+            });
+
+            // 2. DURUMA GÖRE RENK SEÇ
+            // Eğer "Hazır" ise yeşil, hala "Hazırlanıyor" ise sarı olsun.
+            let durumRozeti = siparis.status === "Hazır" 
+                ? '<span class="badge bg-success">Servise Hazır</span>' 
+                : '<span class="badge bg-warning text-dark">Mutfakta</span>';
+
+            // 3. HTML KARTINI OLUŞTUR
+            const kartHTML = `
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <h5 class="m-0">Masa ${siparis.table_no}</h5>
+                            <small>Fiş #${siparis.id}</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3 text-center">
+                                ${durumRozeti}
+                            </div>
+                            <ul class="list-unstyled">
+                                ${detayHTML}
+                            </ul>
+                            <h4 class="text-end border-top pt-2 mt-3">
+                                Toplam: <span class="text-success">${toplamTutar} TL</span>
+                            </h4>
+                        </div>
+                        <div class="card-footer bg-white">
+                            <button onclick="hesabiKapat(${siparis.id})" class="btn btn-outline-success w-100 fw-bold">
+                                💳 ÖDEME AL & KAPAT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            alan.innerHTML += kartHTML;
+        });
+    }
+
+    // HESABI KAPATMA (ÖDENDİ İŞARETLEME)
+    async function hesabiKapat(siparisID) {
+        if(confirm("Ödeme alındı ve masa kapatılıyor. Onaylıyor musunuz?")) {
+            await fetch(`http://127.0.0.1:8000/orders/${siparisID}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: "Ödendi" })
+            });
+            adisyonlariGetir(); // Listeyi hemen yenile
+        }
+    }
+</script>
+
+</body>
+</html>

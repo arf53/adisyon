@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mutfak Ekranı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Kartların daha belirgin olması için özel stil */
+        .order-card {
+            border-left: 10px solid #dc3545; /* Sol taraf kırmızı çizgi */
+            transition: transform 0.2s;
+        }
+        .order-card:hover {
+            transform: scale(1.02); /* Üzerine gelince hafif büyüsün */
+        }
+    </style>
+</head>
+<body class="bg-dark text-white">
+
+<div class="container-fluid mt-4">
+    <h2 class="text-center mb-4 text-warning">👨‍🍳 AKTİF SİPARİŞLER</h2>
+    
+    <div class="row" id="siparisKutusu">
+        <div class="text-center mt-5 text-secondary">
+            <h3>Şu an bekleyen sipariş yok...</h3>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sayfa açıldığında ve her 3 saniyede bir çalıştır
+    window.onload = function() {
+        siparisleriGetir();
+        setInterval(siparisleriGetir, 3000); // 3000 milisaniye = 3 saniye
+    };
+
+    // 1. SİPARİŞLERİ ÇEKME FONKSİYONU
+    async function siparisleriGetir() {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/kitchen/orders');
+            const siparisler = await response.json();
+            
+            const kutu = document.getElementById("siparisKutusu");
+            
+            // Eğer sipariş yoksa boş ekran mesajı göster
+            if (siparisler.length === 0) {
+                kutu.innerHTML = '<div class="text-center mt-5 text-secondary"><h3>Şu an bekleyen sipariş yok...</h3></div>';
+                return;
+            }
+
+            // Önce kutuyu temizle, sonra yeniden doldur
+            kutu.innerHTML = ""; 
+
+            siparisler.forEach(siparis => {
+                // Her sipariş için iç içe HTML oluşturuyoruz
+                let urunListesiHTML = "";
+                
+                siparis.items.forEach(kalem => {
+                    urunListesiHTML += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${kalem.quantity}x</strong> ${kalem.product.name}
+                                <br>
+                                <small class="text-danger">${kalem.note || ""}</small>
+                            </div>
+                        </li>
+                    `;
+                });
+
+                // Kartın HTML şablonu
+                const kartHTML = `
+                    <div class="col-md-4 col-lg-3 mb-4">
+                        <div class="card order-card h-100 shadow">
+                            <div class="card-header bg-danger text-white d-flex justify-content-between">
+                                <span>Masa: <strong>${siparis.table_no}</strong></span>
+                                <span>Fiş: #${siparis.id}</span>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    ${urunListesiHTML}
+                                </ul>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <button onclick="hazirla(${siparis.id})" class="btn btn-success w-100 btn-lg">
+                                    ✅ HAZIR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                kutu.innerHTML += kartHTML;
+            });
+
+        } catch (error) {
+            console.error("Bağlantı hatası:", error);
+        }
+    }
+
+    // 2. DURUM GÜNCELLEME (PUT İSTEĞİ)
+    async function hazirla(siparisID) {
+        const onays = confirm("Bu siparişi tamamladınız mı?");
+        if (onays) {
+            await fetch(`http://127.0.0.1:8000/orders/${siparisID}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: "Hazır" })
+            });
+            // Ekranda anlık yenilenmesi için fonksiyonu hemen çağır
+            siparisleriGetir(); 
+        }
+    }
+</script>
+
+</body>
+</html>
