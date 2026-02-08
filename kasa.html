@@ -19,90 +19,126 @@
 </div>
 
 <script>
+    // --- AYARLAR ---
+    const BASE_URL = "";
+
     window.onload = function() {
+        const token = localStorage.getItem("access_token");
+        
+        // DÜZELTME: '/static/' silindi, sadece 'login.html' kaldı
+        if (!token) { 
+            window.location.href = 'login.html'; 
+            return; 
+        }
+        
         adisyonlariGetir();
         setInterval(adisyonlariGetir, 5000); // 5 saniyede bir yenile
     };
 
+    // 1. ADİSYONLARI GETİR
     async function adisyonlariGetir() {
-        const response = await fetch('/cashier/orders');
-        const siparisler = await response.json();
-        
-        const alan = document.getElementById("kasaListesi");
-        alan.innerHTML = "";
-
-        if (siparisler.length === 0) {
-            alan.innerHTML = '<div class="alert alert-secondary text-center w-100">Açık adisyon bulunmuyor.</div>';
-            return;
-        }
-
-        siparisler.forEach(siparis => {
-            // 1. TOPLAM TUTARI HESAPLA
-            let toplamTutar = 0;
-            let detayHTML = "";
-            
-            siparis.items.forEach(kalem => {
-                let kalemTutar = kalem.quantity * kalem.product.price; // Adet * Fiyat
-                toplamTutar += kalemTutar;
-                
-                detayHTML += `
-                    <li class="d-flex justify-content-between border-bottom py-1">
-                        <span>${kalem.quantity}x ${kalem.product.name}</span>
-                        <span>${kalemTutar} TL</span>
-                    </li>
-                `;
+        const token = localStorage.getItem("access_token");
+        try {
+            const response = await fetch(`${BASE_URL}/cashier/orders`, {
+                headers: { 'Authorization': 'Bearer ' + token }
             });
 
-            // 2. DURUMA GÖRE RENK SEÇ
-            // Eğer "Hazır" ise yeşil, hala "Hazırlanıyor" ise sarı olsun.
-            let durumRozeti = siparis.status === "Hazır" 
-                ? '<span class="badge bg-success">Servise Hazır</span>' 
-                : '<span class="badge bg-warning text-dark">Mutfakta</span>';
+            // Oturum süresi dolmuşsa login'e at
+            if (response.status === 401) {
+                window.location.href = 'login.html'; // DÜZELTME
+                return;
+            }
 
-            // 3. HTML KARTINI OLUŞTUR
-            const kartHTML = `
-                <div class="col-md-4 mb-4">
-                    <div class="card shadow h-100">
-                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                            <h5 class="m-0">Masa ${siparis.table_no}</h5>
-                            <small>Fiş #${siparis.id}</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3 text-center">
-                                ${durumRozeti}
+            const siparisler = await response.json();
+            const alan = document.getElementById("kasaListesi");
+            alan.innerHTML = "";
+
+            if (siparisler.length === 0) {
+                alan.innerHTML = '<div class="alert alert-secondary text-center w-100">Açık adisyon bulunmuyor.</div>';
+                return;
+            }
+
+            siparisler.forEach(siparis => {
+                let toplamTutar = 0;
+                let detayHTML = "";
+                
+                siparis.items.forEach(kalem => {
+                    let kalemTutar = kalem.quantity * kalem.product.price;
+                    toplamTutar += kalemTutar;
+                    
+                    detayHTML += `
+                        <li class="d-flex justify-content-between border-bottom py-1">
+                            <span>${kalem.quantity}x ${kalem.product.name}</span>
+                            <span>${kalemTutar} TL</span>
+                        </li>
+                    `;
+                });
+
+                let durumRozeti = siparis.status === "Hazır" 
+                    ? '<span class="badge bg-success">Servise Hazır</span>' 
+                    : '<span class="badge bg-warning text-dark">Mutfakta</span>';
+
+                const kartHTML = `
+                    <div class="col-md-4 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                <h5 class="m-0">Masa ${siparis.table_no}</h5>
+                                <small>Fiş #${siparis.id}</small>
                             </div>
-                            <ul class="list-unstyled">
-                                ${detayHTML}
-                            </ul>
-                            <h4 class="text-end border-top pt-2 mt-3">
-                                Toplam: <span class="text-success">${toplamTutar} TL</span>
-                            </h4>
-                        </div>
-                        <div class="card-footer bg-white">
-                            <button onclick="hesabiKapat(${siparis.id})" class="btn btn-outline-success w-100 fw-bold">
-                                💳 ÖDEME AL & KAPAT
-                            </button>
+                            <div class="card-body">
+                                <div class="mb-3 text-center">
+                                    ${durumRozeti}
+                                </div>
+                                <ul class="list-unstyled">
+                                    ${detayHTML}
+                                </ul>
+                                <h4 class="text-end border-top pt-2 mt-3">
+                                    Toplam: <span class="text-success">${toplamTutar} TL</span>
+                                </h4>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <button onclick="hesabiKapat(${siparis.id})" class="btn btn-outline-success w-100 fw-bold">
+                                    💳 ÖDEME AL & KAPAT
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            alan.innerHTML += kartHTML;
-        });
+                `;
+                alan.innerHTML += kartHTML;
+            });
+
+        } catch (error) {
+            console.error("Bağlantı hatası:", error);
+        }
     }
 
-    // HESABI KAPATMA (ÖDENDİ İŞARETLEME)
+    // 2. HESABI KAPAT
     async function hesabiKapat(siparisID) {
         if(confirm("Ödeme alındı ve masa kapatılıyor. Onaylıyor musunuz?")) {
-            await fetch(`/orders/${siparisID}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: "Ödendi" })
-            });
-            adisyonlariGetir(); // Listeyi hemen yenile
+            const token = localStorage.getItem("access_token");
+            
+            try {
+                const response = await fetch(`${BASE_URL}/orders/${siparisID}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify({ status: "Ödendi" })
+                });
+
+                if (response.ok) {
+                    adisyonlariGetir(); 
+                } else {
+                    alert("İşlem başarısız! Yetkiniz olmayabilir.");
+                }
+            } catch (error) {
+                alert("Hata oluştu: " + error);
+            }
         }
     }
 </script>
 
 </body>
-
 </html>
+
