@@ -65,140 +65,71 @@
 </div>
 
 <script>
-    // Global Sepet Değişkeni
+    const BASE_URL = ""; 
     let sepet = [];
     let urunlerDB = [];
 
-    // Sayfa açılınca menüyü çek
     window.onload = function() {
+        const token = localStorage.getItem("access_token");
+        // DÜZELTİLDİ: /static/ silindi
+        if (!token) { window.location.href = 'login.html'; return; }
         urunleriGetir();
     };
 
-    // 1. ÜRÜNLERİ BACKEND'DEN ÇEK
     async function urunleriGetir() {
-        const response = await fetch('/products');
-        urunlerDB = await response.json();
-        
-        const alan = document.getElementById("urunListesi");
-        alan.innerHTML = "";
-
-        urunlerDB.forEach(urun => {
-            // Her ürün için bir kutu (kart) oluştur
-            alan.innerHTML += `
-                <div class="col-md-4 mb-3">
-                    <div class="card urun-kutusu shadow-sm text-center bg-white" 
-                         onclick="sepeteEkle(${urun.id})">
-                        <div class="card-body d-flex flex-column justify-content-center">
-                            <h5 class="card-title">${urun.name}</h5>
-                            <p class="card-text text-primary fw-bold">${urun.price} TL</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    // 2. SEPET İŞLEMLERİ
-    function sepeteEkle(urunID) {
-        // Tıklanan ürünü veritabanı listesinden bul
-        const urun = urunlerDB.find(u => u.id === urunID);
-        
-        // Sepette zaten var mı?
-        const varMi = sepet.find(item => item.product_id === urunID);
-
-        if (varMi) {
-            varMi.quantity += 1; // Varsa adeti artır
-        } else {
-            // Yoksa yeni ekle
-            sepet.push({
-                product_id: urun.id,
-                name: urun.name,
-                price: urun.price,
-                quantity: 1,
-                note: ""
+        const token = localStorage.getItem("access_token");
+        try {
+            const response = await fetch(`${BASE_URL}/products`, {
+                headers: { 'Authorization': 'Bearer ' + token }
             });
-        }
+            // DÜZELTİLDİ
+            if (response.status === 401) { window.location.href = 'login.html'; return; }
+            
+            urunlerDB = await response.json();
+            // ... (Kalan kodlar aynı)
+            const alan = document.getElementById("urunListesi");
+            alan.innerHTML = "";
+            urunlerDB.forEach(urun => {
+                alan.innerHTML += `<div class="col-md-4 mb-3"><div class="card urun-kutusu shadow-sm text-center bg-white" onclick="sepeteEkle(${urun.id})"><div class="card-body d-flex flex-column justify-content-center"><h5 class="card-title">${urun.name}</h5><p class="card-text text-primary fw-bold">${urun.price} TL</p></div></div></div>`;
+            });
+        } catch (error) { console.error("Hata:", error); }
+    }
+    
+    // ... (Sepet fonksiyonları aynı kalabilir)
+    function sepeteEkle(urunID) {
+        const urun = urunlerDB.find(u => u.id === urunID);
+        const varMi = sepet.find(item => item.product_id === urunID);
+        if (varMi) { varMi.quantity += 1; } else { sepet.push({ product_id: urun.id, name: urun.name, price: urun.price, quantity: 1, note: "" }); }
         sepetiGuncelle();
     }
-
     function sepetiGuncelle() {
         const liste = document.getElementById("sepetListesi");
         const toplamEl = document.getElementById("toplamFiyat");
-        
         liste.innerHTML = "";
         let toplam = 0;
-
-        if (sepet.length === 0) {
-            liste.innerHTML = '<p class="text-center text-muted">Sepet boş...</p>';
-            toplamEl.innerText = "0.00 TL";
-            return;
-        }
-
         sepet.forEach((item, index) => {
             toplam += item.price * item.quantity;
-            liste.innerHTML += `
-                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
-                    <div>
-                        <strong>${item.name}</strong>
-                        <br>
-                        <small>${item.quantity} x ${item.price} TL</small>
-                    </div>
-                    <div>
-                        <span class="fw-bold">${item.price * item.quantity} TL</span>
-                        <button onclick="sepettenSil(${index})" class="btn btn-sm btn-outline-danger ms-2">X</button>
-                    </div>
-                </div>
-            `;
+            liste.innerHTML += `<div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1"><div><strong>${item.name}</strong><br><small>${item.quantity} x ${item.price} TL</small></div><div><span class="fw-bold">${item.price * item.quantity} TL</span> <button onclick="sepettenSil(${index})" class="btn btn-sm btn-outline-danger ms-2">X</button></div></div>`;
         });
-
         toplamEl.innerText = toplam.toFixed(2) + " TL";
     }
+    function sepettenSil(index) { sepet.splice(index, 1); sepetiGuncelle(); }
 
-    function sepettenSil(index) {
-        sepet.splice(index, 1);
-        sepetiGuncelle();
-    }
-
-    // 3. SİPARİŞİ API'YE GÖNDER (POST)
     async function siparisiGonder() {
-        if (sepet.length === 0) {
-            alert("Sepet boş!");
-            return;
-        }
-
+        if (sepet.length === 0) { alert("Sepet boş!"); return; }
+        const token = localStorage.getItem("access_token");
         const masaNo = document.getElementById("masaNo").value;
-        
-        // Backend'in beklediği formatı hazırlıyoruz
-        const veri = {
-            table_no: parseInt(masaNo),
-            waiter_id: 1, // Şimdilik sabit garson
-            items: sepet.map(item => ({
-                product_id: item.product_id,
-                quantity: item.quantity,
-                note: item.note
-            }))
-        };
-
         try {
-            const response = await fetch('/orders', {
+            const response = await fetch(`${BASE_URL}/orders`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(veri)
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ table_no: parseInt(masaNo), items: sepet.map(item => ({ product_id: item.product_id, quantity: item.quantity, note: item.note })) })
             });
-
-            if (response.ok) {
-                alert("Sipariş Mutfağa İletildi! 👨‍🍳");
-                sepet = []; // Sepeti boşalt
-                sepetiGuncelle();
-            } else {
-                alert("Hata oluştu!");
-            }
-        } catch (hata) {
-            console.error("Hata:", hata);
-        }
+            if (response.ok) { alert("Sipariş Gitti!"); sepet = []; sepetiGuncelle(); }
+        } catch (hata) { console.error(hata); }
     }
 </script>
 
 </body>
-
 </html>
+
