@@ -328,31 +328,32 @@ def personel_ekle(user: UserCreate, current_user: User= Depends(get_current_user
     return{"mesaj":"Personel eklendi"}
 
 
-BASE_DIR =  os.path.dirname(os.path.abspath(__file__)
+BASE_DIR =  os.path.dirname(os.path.abspath(__file__))
 
 @app.get("/")
 async def ana_sayfa():
-return FileResponse(os.path.join(BASE_DIR, 'login.html'))
+  return FileResponse(os.path.join(BASE_DIR, 'login.html'))
          
 @app.get("/register.html")
 async def get_register():
-return FileResponse(os.path.join(BASE_DIR, 'register.html'))
+  return FileResponse(os.path.join(BASE_DIR, 'register.html'))
 
 @app.get("/garson.html")
 async def get_garson():
-return FileResponse(os.path.join(BASE_DIR,'garson.html'))
+  return FileResponse(os.path.join(BASE_DIR,'garson.html'))
 
 @app.get("/mutfak.html")
 async def get_mutfak():
-return FileResponse(os.path.join(BASE_DIR,('mutfak.html'))
+  return FileResponse(os.path.join(BASE_DIR,'mutfak.html'))
 
 @app.get("/kasa.html")
-async def get_kasa()
-return FileResponse(os.path.join(BASE_DIR,('kasa.html'))
+async def get_kasa():
+  return FileResponse(os.path.join(BASE_DIR,('kasa.html'))
 
 @app.get("/admin.html")
 async def get_admin():
-return FileResponse(os.path.join(BASE_DIR,'admin.html'))
+  return FileResponse(os.path.join(BASE_DIR,'admin.html'))
+
 
 
 
