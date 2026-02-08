@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Mutfak Ekranı</title>
+    <title>Mutfak Ekranı - Sipariş Notları</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .order-card {
@@ -11,6 +11,18 @@
         }
         .order-card:hover {
             transform: scale(1.02);
+        }
+        /* YENİ: Sipariş notunu daha dikkat çekici yapan stil */
+        .siparis-notu {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 5px;
+            font-weight: bold;
+            border: 1px solid #ffeeba;
+            width: 100%;
         }
     </style>
 </head>
@@ -27,22 +39,19 @@
 </div>
 
 <script>
-    // --- AYARLAR ---
+    // BASE_URL boş bırakıldı, Vercel üzerinde otomatik çalışır
+    const BASE_URL = ""; 
 
     window.onload = function() {
         const token = localStorage.getItem("access_token");
-        
-        // DÜZELTME: '/static/' silindi, sadece 'login.html' kaldı
         if (!token) { 
             window.location.href = 'login.html'; 
             return; 
         }
-        
         siparisleriGetir();
-        setInterval(siparisleriGetir, 3000); // 3 saniyede bir yenile
+        setInterval(siparisleriGetir, 4000); // Mutfak için 4 saniyede bir yenileme yeterlidir
     };
 
-    // 1. SİPARİŞLERİ GETİR
     async function siparisleriGetir() {
         const token = localStorage.getItem("access_token");
         try {
@@ -50,9 +59,8 @@
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             
-            // Yetkisiz ise (Token süresi dolmuşsa)
             if (response.status === 401) {
-                window.location.href = 'login.html'; // DÜZELTME
+                window.location.href = 'login.html';
                 return;
             }
 
@@ -69,26 +77,32 @@
             siparisler.forEach(siparis => {
                 let urunListesiHTML = "";
                 siparis.items.forEach(kalem => {
+                    // EĞER NOT VARSA GÖSTER
+                    const notHTML = kalem.note ? `<div class="siparis-notu">📌 NOT: ${kalem.note}</div>` : "";
+                    
                     urunListesiHTML += `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div><strong>${kalem.quantity}x</strong> ${kalem.product.name}
-                            <br><small class="text-danger">${kalem.note || ""}</small></div>
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>${kalem.quantity} Adet</strong> 
+                                <span>${kalem.product.name}</span>
+                            </div>
+                            ${notHTML}
                         </li>
                     `;
                 });
 
                 kutu.innerHTML += `
                     <div class="col-md-4 col-lg-3 mb-4">
-                        <div class="card order-card h-100 shadow">
-                            <div class="card-header bg-danger text-white d-flex justify-content-between">
-                                <span>Masa: <strong>${siparis.table_no}</strong></span>
-                                <span>Fiş: #${siparis.id}</span>
+                        <div class="card order-card h-100 shadow border-0">
+                            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0">Masa: ${siparis.table_no}</h4>
+                                <small>#${siparis.id}</small>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-0">
                                 <ul class="list-group list-group-flush">${urunListesiHTML}</ul>
                             </div>
-                            <div class="card-footer bg-white">
-                                <button onclick="hazirla(${siparis.id})" class="btn btn-success w-100 btn-lg">✅ HAZIR</button>
+                            <div class="card-footer bg-white border-0">
+                                <button onclick="hazirla(${siparis.id})" class="btn btn-success w-100 btn-lg shadow-sm">✅ TAMAMLANDI</button>
                             </div>
                         </div>
                     </div>
@@ -98,12 +112,8 @@
         } catch (error) { console.error("Bağlantı hatası:", error); }
     }
 
-    // 2. SİPARİŞİ HAZIRLA (Token Eklendi)
     async function hazirla(siparisID) {
-        if (!confirm("Bu siparişi tamamladınız mı?")) return;
-        
         const token = localStorage.getItem("access_token");
-        
         try {
             const response = await fetch(`/orders/${siparisID}/status`, {
                 method: 'PUT',
@@ -117,16 +127,13 @@
             if(response.ok) {
                 siparisleriGetir(); 
             } else {
-                alert("İşlem başarısız!");
+                alert("Durum güncellenemedi!");
             }
-        } catch(e) {
-            console.error(e);
-        }
+        } catch(e) { console.error(e); }
     }
 </script>
 
 </body>
 </html>
-
 
 
