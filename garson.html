@@ -65,7 +65,7 @@
 </div>
 
 <script>
-    const BASE_URL = ""; 
+    const  = ""; 
     let sepet = [];
     let urunlerDB = [];
 
@@ -79,7 +79,7 @@
     async function urunleriGetir() {
         const token = localStorage.getItem("access_token");
         try {
-            const response = await fetch(`${BASE_URL}/products`, {
+            const response = await fetch(`/products`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             // DÜZELTİLDİ
@@ -120,7 +120,7 @@
         const token = localStorage.getItem("access_token");
         const masaNo = document.getElementById("masaNo").value;
         try {
-            const response = await fetch(`${BASE_URL}/orders`, {
+            const response = await fetch(`/orders`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ table_no: parseInt(masaNo), items: sepet.map(item => ({ product_id: item.product_id, quantity: item.quantity, note: item.note })) })
@@ -132,4 +132,5 @@
 
 </body>
 </html>
+
 
