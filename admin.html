@@ -98,7 +98,6 @@
 
 <script>
     // --- AYARLAR ---
-    const BASE_URL = ""; 
 
     window.onload = function() {
         sayfayiYenile();
@@ -126,7 +125,7 @@
         if(!kadi || !sifre) { alert("Lütfen kullanıcı adı ve şifre girin!"); return; }
 
         try {
-            const response = await fetch(`${BASE_URL}/users`, {
+            const response = await fetch(`/users`, {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: kadi, password: sifre, role: rol })
@@ -147,7 +146,7 @@
         if (!token) { window.location.href = 'login.html'; return; } // DÜZELTİLDİ
 
         try {
-            const response = await fetch(`${BASE_URL}/categories`, {
+            const response = await fetch(`/categories`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             if (response.status === 401) { cikisYap(); return; }
@@ -174,7 +173,7 @@
         if(!ad) return;
 
         try {
-            const response = await fetch(`${BASE_URL}/categories`, {
+            const response = await fetch(`/categories`, {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: ad })
@@ -193,7 +192,7 @@
         if (!token) return;
 
         try {
-            const response = await fetch(`${BASE_URL}/products`, {
+            const response = await fetch(`/products`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             const urunler = await response.json();
@@ -217,7 +216,7 @@
         if(!ad || !fiyat || !katId) { alert("Bilgileri doldurun!"); return; }
 
         try {
-            const response = await fetch(`${BASE_URL}/products`, {
+            const response = await fetch(`/products`, {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: ad, price: parseFloat(fiyat), category_id: parseInt(katId) })
@@ -232,4 +231,5 @@
 
 </body>
 </html>
+
 
