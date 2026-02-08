@@ -7,12 +7,38 @@
 </head>
 <body class="bg-light">
 
-<div class="container mt-5">
-    <h2 class="text-center mb-4 text-primary">Restoran Yönetim Paneli</h2>
+<div class="container mt-5 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">Restoran Yönetim Paneli</h2>
+        <button onclick="cikisYap()" class="btn btn-danger">Çıkış Yap</button>
+    </div>
     
     <div class="row">
         <div class="col-md-4">
             
+            <div class="card shadow mb-4 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="m-0">👤 Personel Ekle (Garson/Mutfak/Kasa)</h6>
+                </div>
+                <div class="card-body">
+                    <label>Kullanıcı Adı:</label>
+                    <input type="text" id="personelAdi" class="form-control mb-2" placeholder="Örn: garson_ali">
+                    
+                    <label>Şifre:</label>
+                    <input type="text" id="personelSifre" class="form-control mb-2" placeholder="Örn: 1234">
+                    
+                    <label>Rolü:</label>
+                    <select id="personelRol" class="form-select mb-3">
+                        <option value="garson">Garson</option>
+                        <option value="mutfak">Mutfak Personeli</option>
+                        <option value="kasa">Kasiyer</option>
+                        <option value="admin">Yönetici (Admin)</option>
+                    </select>
+
+                    <button onclick="personelEkle()" class="btn btn-info text-white w-100">Personeli Kaydet</button>
+                </div>
+            </div>
+
             <div class="card shadow mb-4">
                 <div class="card-header bg-warning text-dark">
                     <h6 class="m-0">➕ Yeni Kategori Oluştur</h6>
@@ -71,11 +97,8 @@
 </div>
 
 <script>
-    // --- ÖNEMLİ AYAR: SUNUCU ADRESİ ---
-    // Eğer kendi bilgisayarında çalışıyorsan: "http://127.0.0.1:8000"
-    // Eğer PythonAnywhere'de çalışıyorsan: "https://ahmt58.pythonanywhere.com"
-    // Şimdilik Localhost ayarlı bırakıyorum:
-    const BASE_URL = "http://127.0.0.1:800"; 
+    // --- AYARLAR ---
+    const BASE_URL = ""; 
 
     window.onload = function() {
         sayfayiYenile();
@@ -85,21 +108,53 @@
         kategorileriGetir();
         menuyuGetir();
     }
+    
+    function cikisYap() {
+        localStorage.removeItem("access_token");
+        window.location.href = 'login.html'; // DÜZELTİLDİ
+    }
 
-    // --- 1. KATEGORİ İŞLEMLERİ ---
-    async function kategorileriGetir() {
+    // --- 0. PERSONEL EKLEME ---
+    async function personelEkle() {
+        const token = localStorage.getItem("access_token");
+        if (!token) { window.location.href = 'login.html'; return; } // DÜZELTİLDİ
+
+        const kadi = document.getElementById("personelAdi").value;
+        const sifre = document.getElementById("personelSifre").value;
+        const rol = document.getElementById("personelRol").value;
+
+        if(!kadi || !sifre) { alert("Lütfen kullanıcı adı ve şifre girin!"); return; }
+
         try {
-            // Fetch adresinin başına BASE_URL ekledik
-            const response = await fetch(`/categories`);
-            
-            if (!response.ok) {
-                throw new Error("Sunucuya ulaşılamadı (CORS veya Sunucu Kapalı)");
-            }
+            const response = await fetch(`${BASE_URL}/users`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: kadi, password: sifre, role: rol })
+            });
+
+            if (response.status === 403) { alert("Yetkiniz yok!"); return; }
+            if (response.ok) {
+                alert(`✅ ${kadi} kullanıcısı oluşturuldu!`);
+                document.getElementById("personelAdi").value = "";
+                document.getElementById("personelSifre").value = "";
+            } else { alert("Hata oluştu!"); }
+        } catch (error) { alert("Sunucu hatası: " + error.message); }
+    }
+
+    // --- 1. KATEGORİ LİSTELEME ---
+    async function kategorileriGetir() {
+        const token = localStorage.getItem("access_token");
+        if (!token) { window.location.href = 'login.html'; return; } // DÜZELTİLDİ
+
+        try {
+            const response = await fetch(`${BASE_URL}/categories`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (response.status === 401) { cikisYap(); return; }
 
             const kategoriler = await response.json();
             const selectKutu = document.getElementById("urunKategori");
             selectKutu.innerHTML = ""; 
-
             if(kategoriler.length === 0) {
                 selectKutu.innerHTML = "<option disabled selected>Önce Kategori Ekleyin!</option>";
             } else {
@@ -107,95 +162,74 @@
                     selectKutu.innerHTML += `<option value="${kat.id}">${kat.name}</option>`;
                 });
             }
-        } catch (error) {
-            console.error("Hata:", error);
-            // Hata mesajını ekrana basmıyoruz ki sürekli popup çıkmasın
-        }
+        } catch (error) { console.error(error); }
     }
 
+    // --- 2. KATEGORİ EKLEME ---
     async function kategoriEkle() {
+        const token = localStorage.getItem("access_token");
+        if (!token) { window.location.href = 'login.html'; return; } // DÜZELTİLDİ
+
         const ad = document.getElementById("kategoriAdi").value;
-        if(!ad) { alert("Lütfen isim girin!"); return; }
+        if(!ad) return;
 
         try {
-            const response = await fetch(`/categories`, {
+            const response = await fetch(`${BASE_URL}/categories`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: ad })
             });
-
             if (response.ok) {
                 alert("✅ Kategori eklendi!");
                 document.getElementById("kategoriAdi").value = "";
                 sayfayiYenile(); 
-            } else {
-                alert("Hata oluştu! Kategori eklenemedi.");
             }
-        } catch (error) {
-            alert("Sunucu hatası: " + error.message);
-        }
+        } catch (error) { alert("Hata: " + error.message); }
     }
 
-    // --- 2. ÜRÜN İŞLEMLERİ ---
+    // --- 3. ÜRÜN LİSTELEME ---
     async function menuyuGetir() {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+
         try {
-            const response = await fetch(`/products`);
+            const response = await fetch(`${BASE_URL}/products`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
             const urunler = await response.json();
             const tablo = document.getElementById("urunListesi");
             tablo.innerHTML = ""; 
-
             urunler.forEach(urun => {
-                tablo.innerHTML += `
-                    <tr>
-                        <td><span class="badge bg-secondary">${urun.id}</span></td>
-                        <td><b>${urun.name}</b></td>
-                        <td>${urun.price} ₺</td>
-                        <td>${urun.category_id}</td>
-                    </tr>
-                `;
+                tablo.innerHTML += `<tr><td><span class="badge bg-secondary">${urun.id}</span></td><td><b>${urun.name}</b></td><td>${urun.price} ₺</td><td>${urun.category_id}</td></tr>`;
             });
-        } catch (error) {
-            console.error("Hata:", error);
-        }
+        } catch (error) { console.error(error); }
     }
 
+    // --- 4. ÜRÜN EKLEME ---
     async function urunEkle() {
+        const token = localStorage.getItem("access_token");
+        if (!token) { window.location.href = 'login.html'; return; } // DÜZELTİLDİ
+
         const ad = document.getElementById("urunAdi").value;
         const fiyat = document.getElementById("urunFiyat").value;
         const katId = document.getElementById("urunKategori").value;
 
-        if(!ad || !fiyat || !katId) {
-            alert("Lütfen tüm alanları doldurun ve bir kategori seçin!");
-            return;
-        }
-
-        const veri = {
-            name: ad,
-            price: parseFloat(fiyat),
-            category_id: parseInt(katId)
-        };
+        if(!ad || !fiyat || !katId) { alert("Bilgileri doldurun!"); return; }
 
         try {
-            const response = await fetch(`/products`, {
+            const response = await fetch(`${BASE_URL}/products`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(veri)
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: ad, price: parseFloat(fiyat), category_id: parseInt(katId) })
             });
-
             if (response.ok) {
-                alert("✅ Ürün başarıyla eklendi!");
+                alert("✅ Ürün eklendi!");
                 sayfayiYenile();
-                document.getElementById("urunAdi").value = "";
-                document.getElementById("urunFiyat").value = "";
-            } else {
-                alert("Hata oluştu! Kategori ID'si geçersiz olabilir.");
-            }
-        } catch (error) {
-            alert("Bağlantı hatası: " + error.message);
-        }
+            } else { alert("Hata oluştu."); }
+        } catch (error) { alert("Bağlantı hatası"); }
     }
 </script>
 
 </body>
-
 </html>
+
