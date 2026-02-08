@@ -1,76 +1,19 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Garson Sipariş Ekranı</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .urun-kutusu {
-            cursor: pointer;
-            transition: transform 0.1s;
-            height: 100px; /* Buton yüksekliği */
-        }
-        .urun-kutusu:active {
-            transform: scale(0.95); /* Tıklama efekti */
-        }
-        .sepet-alani {
-            height: 80vh;
-            border-left: 2px solid #ddd;
-            background-color: #f8f9fa;
-        }
-    </style>
-</head>
-<body>
+Harika bir fikir! Sipariş notu eklemek, özellikle mutfak ekibiyle iletişim kurmak (örneğin: "Tuzsuz olsun", "Az pişmiş") için çok kritiktir. Mevcut kodunda zaten bir note alanı tanımlıydı; şimdi bunu sadece görünür ve düzenlenebilir hale getireceğiz.
 
-<div class="container-fluid">
-    <div class="row">
-        
-        <div class="col-md-8 p-4">
-            <h3 class="mb-4">🍽️ Menü</h3>
-            
-            <div class="mb-3 d-flex gap-3 align-items-center">
-                <label><h5>Masa No:</h5></label>
-                <select id="masaNo" class="form-select w-25">
-                    <option value="1">Masa 1</option>
-                    <option value="2">Masa 2</option>
-                    <option value="3">Masa 3</option>
-                    <option value="4">Masa 4</option>
-                    <option value="5">Masa 5</option>
-                </select>
-            </div>
+Aşağıda, garson.html dosyanın içindeki <script> bölümünü tamamen yeniledim. Bu yeni sürümde sepete eklenen her ürünün altında bir "Not Ekle" kutusu çıkacak.
 
-            <div class="row" id="urunListesi">
-                </div>
-        </div>
+✅ Güncellenmiş Garson Ekranı Kodları
+Bu kodu, garson.html içindeki mevcut <script> ... </script> bloğunun tamamıyla değiştir:
 
-        <div class="col-md-4 sepet-alani p-4 d-flex flex-column">
-            <h3 class="text-center border-bottom pb-2">📝 Adisyon</h3>
-            
-            <div id="sepetListesi" class="flex-grow-1 overflow-auto mt-3">
-                <p class="text-center text-muted">Sepet boş...</p>
-            </div>
-
-            <div class="mt-3 border-top pt-3">
-                <div class="d-flex justify-content-between mb-3">
-                    <h4>Toplam:</h4>
-                    <h4 id="toplamFiyat">0.00 TL</h4>
-                </div>
-                <button onclick="siparisiGonder()" class="btn btn-success w-100 btn-lg">
-                    🚀 SİPARİŞİ MUTFAĞA GÖNDER
-                </button>
-            </div>
-        </div>
-
-    </div>
-</div>
-
+JavaScript
 <script>
+    // ÖNEMLİ: Daha önceki hatayı düzelterek BASE_URL tanımladım
+    const BASE_URL = ""; 
     let sepet = [];
     let urunlerDB = [];
 
     window.onload = function() {
         const token = localStorage.getItem("access_token");
-        // DÜZELTİLDİ: /static/ silindi
         if (!token) { window.location.href = 'login.html'; return; }
         urunleriGetir();
     };
@@ -81,56 +24,119 @@
             const response = await fetch(`/products`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
-            // DÜZELTİLDİ
             if (response.status === 401) { window.location.href = 'login.html'; return; }
             
             urunlerDB = await response.json();
-            // ... (Kalan kodlar aynı)
             const alan = document.getElementById("urunListesi");
             alan.innerHTML = "";
             urunlerDB.forEach(urun => {
-                alan.innerHTML += `<div class="col-md-4 mb-3"><div class="card urun-kutusu shadow-sm text-center bg-white" onclick="sepeteEkle(${urun.id})"><div class="card-body d-flex flex-column justify-content-center"><h5 class="card-title">${urun.name}</h5><p class="card-text text-primary fw-bold">${urun.price} TL</p></div></div></div>`;
+                alan.innerHTML += `
+                    <div class="col-md-4 mb-3">
+                        <div class="card urun-kutusu shadow-sm text-center bg-white" onclick="sepeteEkle(${urun.id})">
+                            <div class="card-body d-flex flex-column justify-content-center">
+                                <h5 class="card-title">${urun.name}</h5>
+                                <p class="card-text text-primary fw-bold">${urun.price} TL</p>
+                            </div>
+                        </div>
+                    </div>`;
             });
         } catch (error) { console.error("Hata:", error); }
     }
-    
-    // ... (Sepet fonksiyonları aynı kalabilir)
+
     function sepeteEkle(urunID) {
         const urun = urunlerDB.find(u => u.id === urunID);
         const varMi = sepet.find(item => item.product_id === urunID);
-        if (varMi) { varMi.quantity += 1; } else { sepet.push({ product_id: urun.id, name: urun.name, price: urun.price, quantity: 1, note: "" }); }
+        
+        if (varMi) { 
+            varMi.quantity += 1; 
+        } else { 
+            // Her ürün için boş bir note alanı ile ekliyoruz
+            sepet.push({ 
+                product_id: urun.id, 
+                name: urun.name, 
+                price: urun.price, 
+                quantity: 1, 
+                note: "" 
+            }); 
+        }
         sepetiGuncelle();
     }
+
+    // --- YENİ: NOTU GÜNCELLEME FONKSİYONU ---
+    function notuGuncelle(index, yeniNot) {
+        sepet[index].note = yeniNot;
+    }
+
     function sepetiGuncelle() {
         const liste = document.getElementById("sepetListesi");
         const toplamEl = document.getElementById("toplamFiyat");
         liste.innerHTML = "";
         let toplam = 0;
+
         sepet.forEach((item, index) => {
             toplam += item.price * item.quantity;
-            liste.innerHTML += `<div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1"><div><strong>${item.name}</strong><br><small>${item.quantity} x ${item.price} TL</small></div><div><span class="fw-bold">${item.price * item.quantity} TL</span> <button onclick="sepettenSil(${index})" class="btn btn-sm btn-outline-danger ms-2">X</button></div></div>`;
+            liste.innerHTML += `
+                <div class="card mb-2 shadow-sm border-0 bg-white">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${item.name}</strong><br>
+                                <small class="text-muted">${item.quantity} x ${item.price} TL</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold">${(item.price * item.quantity).toFixed(2)} TL</span>
+                                <button onclick="sepettenSil(${index})" class="btn btn-sm btn-outline-danger ms-2">X</button>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <input type="text" class="form-control form-control-sm" 
+                                   placeholder="Sipariş notu ekle..." 
+                                   value="${item.note}" 
+                                   oninput="notuGuncelle(${index}, this.value)">
+                        </div>
+                    </div>
+                </div>`;
         });
         toplamEl.innerText = toplam.toFixed(2) + " TL";
     }
+
     function sepettenSil(index) { sepet.splice(index, 1); sepetiGuncelle(); }
 
     async function siparisiGonder() {
         if (sepet.length === 0) { alert("Sepet boş!"); return; }
         const token = localStorage.getItem("access_token");
         const masaNo = document.getElementById("masaNo").value;
+        
         try {
             const response = await fetch(`/orders`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ table_no: parseInt(masaNo), items: sepet.map(item => ({ product_id: item.product_id, quantity: item.quantity, note: item.note })) })
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + token 
+                },
+                body: JSON.stringify({ 
+                    table_no: parseInt(masaNo), 
+                    // sepet içindeki güncel notlar burada API'ye gönderiliyor
+                    items: sepet.map(item => ({ 
+                        product_id: item.product_id, 
+                        quantity: item.quantity, 
+                        note: item.note 
+                    })) 
+                })
             });
-            if (response.ok) { alert("Sipariş Gitti!"); sepet = []; sepetiGuncelle(); }
-        } catch (hata) { console.error(hata); }
+            if (response.ok) { 
+                alert("Sipariş Mutfak Ekranına Düştü! ✅"); 
+                sepet = []; 
+                sepetiGuncelle(); 
+            } else {
+                alert("Sipariş gönderilemedi, oturumunuz dolmuş olabilir.");
+            }
+        } catch (hata) { 
+            console.error(hata); 
+            alert("Bağlantı hatası oluştu!");
+        }
     }
 </script>
-
-</body>
-</html>
 
 
 
