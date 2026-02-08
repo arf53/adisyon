@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>İşletme Kaydı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="height: 100vh;">
+
+<div class="card shadow p-4" style="width: 400px;">
+    <h3 class="text-center mb-4">Yeni İşletme Kaydı</h3>
+    <input type="text" id="restName" class="form-control mb-3" placeholder="İşletme Adı (Örn: Lezzet Dünyası)">
+    <input type="text" id="adminUser" class="form-control mb-3" placeholder="Yönetici Kullanıcı Adı">
+    <input type="password" id="adminPass" class="form-control mb-3" placeholder="Yönetici Şifresi">
+    <button onclick="kayitOl()" class="btn btn-success w-100">Kayıt Ol</button>
+</div>
+
+<script>
+    // --- ÖNEMLİ AYAR ---
+    // Eğer bilgisayarında çalışıyorsan: "http://127.0.0.1:8000"
+    // Eğer PythonAnywhere'de çalışıyorsan: "https://ahmt58.pythonanywhere.com"
+    const BASE_URL = "http://127.0.0.1:8000"; 
+
+    async function kayitOl() {
+        const veri = {
+            restaurant_name: document.getElementById("restName").value,
+            admin_username: document.getElementById("adminUser").value,
+            admin_password: document.getElementById("adminPass").value
+        };
+
+        try {
+            // Fetch adresinin başına BASE_URL ekledik
+            const response = await fetch(`${BASE_URL}/register_restaurant`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(veri)
+            });
+
+            if (response.ok) {
+                alert("Kayıt Başarılı! Giriş yapabilirsiniz.");
+                // Burada da yönlendirmeyi tam adresle yapıyoruz
+                window.location.href = 'login.html'; 
+            } else {
+                const err = await response.json();
+                alert("Hata: " + err.detail);
+            }
+        } catch (error) {
+            alert("Sunucuya bağlanılamadı! Lütfen sunucunun (main.py) çalıştığından emin olun.");
+            console.error(error);
+        }
+    }
+</script>
+</body>
+</html>
