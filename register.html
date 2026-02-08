@@ -19,7 +19,6 @@
     // --- ÖNEMLİ AYAR ---
     // Eğer bilgisayarında çalışıyorsan: "http://127.0.0.1:8000"
     // Eğer PythonAnywhere'de çalışıyorsan: "https://ahmt58.pythonanywhere.com"
-    const BASE_URL = ""; 
 
     async function kayitOl() {
         const veri = {
@@ -30,7 +29,7 @@
 
         try {
             // Fetch adresinin başına BASE_URL ekledik
-            const response = await fetch(`${BASE_URL}/register_restaurant`, {
+            const response = await fetch(`/register_restaurant`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(veri)
@@ -53,3 +52,4 @@
 </body>
 
 </html>
+
