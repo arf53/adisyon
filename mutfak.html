@@ -28,7 +28,6 @@
 
 <script>
     // --- AYARLAR ---
-    const BASE_URL = "";
 
     window.onload = function() {
         const token = localStorage.getItem("access_token");
@@ -47,7 +46,7 @@
     async function siparisleriGetir() {
         const token = localStorage.getItem("access_token");
         try {
-            const response = await fetch(`${BASE_URL}/kitchen/orders`, {
+            const response = await fetch(`/kitchen/orders`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             
@@ -106,7 +105,7 @@
         const token = localStorage.getItem("access_token");
         
         try {
-            const response = await fetch(`${BASE_URL}/orders/${siparisID}/status`, {
+            const response = await fetch(`/orders/${siparisID}/status`, {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -128,5 +127,6 @@
 
 </body>
 </html>
+
 
 
