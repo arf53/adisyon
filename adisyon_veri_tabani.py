@@ -6,7 +6,7 @@ import os
 DataBase_url = os.environ.get("DataBase_url")
 
 if DataBase_url and DataBase_url.startswith("postgres://"):
-    # Yazım hataları düzeltildi: replace ve postgresql
+    # Yazım hatası düzeltildi: replace ve postgresql
     DataBase_url = DataBase_url.replace("postgres://", "postgresql://", 1)
 
 if not DataBase_url:
@@ -19,7 +19,7 @@ engine = create_engine(DataBase_url, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# 2. MODELLER (Multi-Restaurant Desteği Geri Eklendi)
+# 2. MODELLER (Main.py ile tam uyumlu hale getirildi)
 
 class Restaurant(Base):
     __tablename__ = "restaurants"
@@ -88,11 +88,12 @@ class OrderItem(Base):
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
 
-# 3. TABLOLARI OLUŞTUR (Vercel için blok dışına alındı)
+# 3. TABLOLARI OLUŞTUR (Vercel ayağa kalkarken otomatik oluşturması için)
 Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
-    print("Veritabanı tabloları kontrol edildi ve oluşturuldu.")
+    print("Veritabanı tabloları kontrol edildi.")
+
 
 
 
