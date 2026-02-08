@@ -348,11 +348,12 @@ async def get_mutfak():
 
 @app.get("/kasa.html")
 async def get_kasa():
-  return FileResponse(os.path.join(BASE_DIR,('kasa.html'))
+  return FileResponse(os.path.join(BASE_DIR,'kasa.html'))
 
 @app.get("/admin.html")
 async def get_admin():
   return FileResponse(os.path.join(BASE_DIR,'admin.html'))
+
 
 
 
