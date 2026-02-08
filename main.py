@@ -12,7 +12,17 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+from adisyon_veri_tabani import Base, engine
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Uygulama başlarken tabloları oluştur
+    Base.metadata.create_all(bind=engine)
+    yield
+
+# FastAPI tanımınızı şu şekilde güncelleyin:
+app = FastAPI(lifespan=lifespan)
 
 # --- GÜVENLİK AYARLARI ---
 SECRET_KEY = "safdafdsgfdhggJHIK(UYJHMJOKYR5rythytehghkjg/*-ghjd*/)"
@@ -248,6 +258,7 @@ async def get_kasa():
 @app.get("/admin.html")
 async def get_admin():
     return FileResponse(os.path.join(BASE_DIR, 'admin.html'))
+
 
 
 
